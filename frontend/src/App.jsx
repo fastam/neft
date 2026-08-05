@@ -3,6 +3,44 @@ import './App.css';
 
 const API_URL = "http://127.0.0.1:8000/api";
 
+const RangeSlider = ({ value, onChange, disabled }) => {
+  const [localVal, setLocalVal] = useState(value);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    if (!isDragging) {
+      setLocalVal(value);
+    }
+  }, [value, isDragging]);
+
+  const handleChange = (e) => {
+    setLocalVal(e.target.value);
+  };
+
+  const handleCommit = () => {
+    setIsDragging(false);
+    onChange(parseFloat(localVal));
+  };
+
+  return (
+    <input
+      type="range"
+      className="prop-slider"
+      min="0"
+      max="100"
+      value={localVal}
+      disabled={disabled}
+      onMouseDown={() => setIsDragging(true)}
+      onTouchStart={() => setIsDragging(true)}
+      onChange={handleChange}
+      onMouseUp={handleCommit}
+      onTouchEnd={handleCommit}
+      onBlur={handleCommit}
+      style={{ background: `linear-gradient(to right, #38bdf8 ${localVal}%, #1e293b ${localVal}%)` }}
+    />
+  );
+};
+
 function App() {
   const [time, setTime] = useState(new Date().toLocaleTimeString());
   
@@ -35,8 +73,7 @@ function App() {
               : prev);
           });
         }
-      } catch (e) {
-      }
+      } catch (e) {}
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -52,8 +89,7 @@ function App() {
         headers: { "Content-Type": "application/json" }, 
         body: JSON.stringify(payload) 
       });
-    } catch (e) {
-    }
+    } catch (e) {}
   };
   
   const resetSimulation = async () => { 
@@ -62,8 +98,7 @@ function App() {
       setAlarmsList([]); 
       setActivePanel(null); 
       setAiMessage("Симуляция сброшена. Установка возвращена к нормальным параметрам."); 
-    } catch (e) {
-    }
+    } catch (e) {}
   };
 
   const ackAlarm = (id) => setAlarmsList(alarmsList.map(a => a.id === id ? { ...a, ack: true } : a));
@@ -71,6 +106,19 @@ function App() {
   const getC = (val, warn, danger, isInverse=false) => {
     if (isInverse) return val <= danger ? 'tag-value danger' : val <= warn ? 'tag-value warn' : 'tag-value ok';
     return val >= danger ? 'tag-value danger' : val >= warn ? 'tag-value warn' : 'tag-value ok';
+  };
+
+  const getPanelTitle = () => {
+    switch(activePanel) {
+      case 'h1': return "СЫРЬЕВОЙ НАСОС Н-1";
+      case 'fcv': return "КЛАПАН СЫРЬЯ FCV-1";
+      case 'k1': return "КОЛОННА К-1";
+      case 'pcv': return "СБРОС НА ФАКЕЛ PCV-221";
+      case 'avz': return "АППАРАТ ВОЗД. ОХЛАЖДЕНИЯ АВЗ-1";
+      case 'h2': return "ПЕЧНОЙ НАСОС Н-2";
+      case 'trc3': return "РЕГУЛЯТОР ПЕЧИ П-3 (TRC-3)";
+      default: return "ВЫБЕРИТЕ ОБЪЕКТ";
+    }
   };
 
   if (state.exploded) return (
@@ -83,8 +131,7 @@ function App() {
 
   return (
     <div className="dashboard-layout">
-      
-      <header className="top-header glass-panel" style={{flexDirection: 'row', padding: '0 24px'}}>
+      <header className="top-header glass-panel">
         <div className="brand">
           <h1>КТК: ЭЛОУ-АВТ-4</h1><div className="divider"></div><span>Полномасштабный Тренажер</span>
         </div>
@@ -97,26 +144,26 @@ function App() {
       </header>
 
       <div className="scada-area">
-        <div className="panel-title" style={{position:'absolute', top: 16, left: 16, zIndex: 10, background: '#0f172a', padding: '4px 8px', borderRadius: 4, border: '1px solid #334155'}}>МНЕМОСХЕМА АСУ ТП</div>
+        <div className="panel-title" style={{position:'absolute', top: 16, left: 16, zIndex: 10, background: '#0f172a', padding: '4px 8px', borderRadius: 4, border: '1px solid #334155', color: '#94a3b8', margin: 0}}>МНЕМОСХЕМА АСУ ТП</div>
         
         <svg className="svg-layer" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-          <path d="M 150 700 L 400 700" className="svg-pipe-bg" />
-          {state.pump_H1 && <path d="M 150 700 L 400 700" className="svg-pipe-flow" />}
+          <path d="M 100 700 L 350 700" className="svg-pipe-bg" vectorEffect="non-scaling-stroke" />
+          {state.pump_H1 && <path d="M 100 700 L 350 700" className="svg-pipe-flow" vectorEffect="non-scaling-stroke" />}
           
-          <path d="M 400 550 L 400 150" className="svg-pipe-bg" />
-          {state.pcv_221 > 0 && <path d="M 400 550 L 400 150" className="svg-pipe-flow flare" />}
+          <path d="M 350 550 L 350 150" className="svg-pipe-bg" vectorEffect="non-scaling-stroke" />
+          {state.pcv_221 > 0 && <path d="M 350 550 L 350 150" className="svg-pipe-flow flare" vectorEffect="non-scaling-stroke" />}
           
-          <path d="M 400 550 L 400 250 Q 400 220 430 220 L 700 220" className="svg-pipe-bg" />
-          {!state.avz_broken && <path d="M 400 550 L 400 250 Q 400 220 430 220 L 700 220" className="svg-pipe-flow gas" />}
+          <path d="M 350 550 L 350 250 Q 350 220 380 220 L 650 220" className="svg-pipe-bg" vectorEffect="non-scaling-stroke" />
+          {!state.avz_broken && <path d="M 350 550 L 350 250 Q 350 220 380 220 L 650 220" className="svg-pipe-flow gas" vectorEffect="non-scaling-stroke" />}
 
-          <path d="M 400 650 L 400 870 Q 400 900 430 900 L 620 900 Q 650 900 650 870 L 650 750" className="svg-pipe-bg" />
-          {state.pump_H2 && <path d="M 400 650 L 400 870 Q 400 900 430 900 L 620 900 Q 650 900 650 870 L 650 750" className="svg-pipe-flow" />}
+          <path d="M 350 650 L 350 870 Q 350 900 380 900 L 520 900 Q 550 900 550 870 L 550 750" className="svg-pipe-bg" vectorEffect="non-scaling-stroke" />
+          {state.pump_H2 && <path d="M 350 650 L 350 870 Q 350 900 380 900 L 520 900 Q 550 900 550 870 L 550 750" className="svg-pipe-flow" vectorEffect="non-scaling-stroke" />}
 
-          <path d="M 650 750 L 900 750" className="svg-pipe-bg" />
-          {state.pump_H2 && <path d="M 650 750 L 900 750" className="svg-pipe-flow" />}
+          <path d="M 550 750 L 880 750" className="svg-pipe-bg" vectorEffect="non-scaling-stroke" />
+          {state.pump_H2 && <path d="M 550 750 L 880 750" className="svg-pipe-flow" vectorEffect="non-scaling-stroke" />}
         </svg>
 
-        <div className={`equipment-node ${!state.pump_H1 ? 'alarm' : 'active'}`} style={{left: '15%', top: '70%'}} onClick={() => setActivePanel('h1')}>
+        <div className={`equipment-node ${!state.pump_H1 ? 'alarm' : 'active'}`} style={{left: '10%', top: '70%'}} onClick={() => setActivePanel('h1')}>
           <div className="eq-header">Сырьевой Н-1</div>
           <div className="eq-body">
             <div className="tag-row"><span className="tag-name">Статус</span><span className={state.pump_H1 ? "tag-value ok" : "tag-value danger"}>{state.pump_H1 ? 'РАБОТА' : 'СТОП'}</span></div>
@@ -124,14 +171,14 @@ function App() {
           </div>
         </div>
 
-        <div className="valve-wrapper" style={{left: '27.5%', top: '70%'}} onClick={() => setActivePanel('fcv')}>
+        <div className="valve-wrapper" style={{left: '22.5%', top: '70%'}} onClick={() => setActivePanel('fcv')}>
           <span className="valve-label">FCV-1</span>
           <svg className={`valve-bowtie ${state.valve_feed > 0 ? 'active' : ''}`} width="36" height="24" viewBox="0 0 32 24">
             <polygon points="2,8 2,22 16,15" /><polygon points="30,8 30,22 16,15" /><rect x="12" y="2" width="8" height="6" fill="currentColor" stroke="currentColor" /><path d="M16 8 v7" stroke="currentColor" strokeWidth="2" />
           </svg>
         </div>
 
-        <div className={`equipment-node ${state.pressure_K1 >= 4.5 || state.level_K1 >= 95 ? 'alarm' : 'active'}`} style={{left: '40%', top: '60%', height: 180}} onClick={() => setActivePanel('k1')}>
+        <div className={`equipment-node ${state.pressure_K1 >= 4.5 || state.level_K1 >= 95 ? 'alarm' : 'active'}`} style={{left: '35%', top: '60%', height: 180}} onClick={() => setActivePanel('k1')}>
           <div className="eq-header">Колонна К-1</div>
           <div className="eq-body" style={{justifyContent: 'center'}}>
             <div className="tag-row"><span className="tag-name">Давление</span><span className={getC(state.pressure_K1, 4.0, 4.5)}>{state.pressure_K1.toFixed(2)} кгс</span></div>
@@ -142,14 +189,14 @@ function App() {
           </div>
         </div>
 
-        <div className="valve-wrapper" style={{left: '40%', top: '15%'}} onClick={() => setActivePanel('pcv')}>
+        <div className="valve-wrapper" style={{left: '35%', top: '15%'}} onClick={() => setActivePanel('pcv')}>
           <span className="valve-label">PCV-221 (Факел)</span>
           <svg className={`valve-bowtie ${state.pcv_stuck ? 'alarm' : state.pcv_221 > 0 ? 'active' : ''}`} width="36" height="24" viewBox="0 0 32 24">
             <polygon points="2,8 2,22 16,15" /><polygon points="30,8 30,22 16,15" /><rect x="12" y="2" width="8" height="6" fill="currentColor" stroke="currentColor" /><path d="M16 8 v7" stroke="currentColor" strokeWidth="2" />
           </svg>
         </div>
 
-        <div className={`equipment-node ${state.avz_broken ? 'alarm' : 'active'}`} style={{left: '70%', top: '22%'}} onClick={() => setActivePanel('avz')}>
+        <div className={`equipment-node ${state.avz_broken ? 'alarm' : 'active'}`} style={{left: '65%', top: '22%'}} onClick={() => setActivePanel('avz')}>
           <div className="eq-header">АВЗ-1 (Охлаждение)</div>
           <div className="eq-body">
             <div className="tag-row"><span className="tag-name">Обороты</span><span className={state.avz_broken?"tag-value danger":"tag-value ok"}>{state.avz_1.toFixed(0)} %</span></div>
@@ -157,21 +204,21 @@ function App() {
           </div>
         </div>
 
-        <div className={`equipment-node ${!state.pump_H2 || state.vib_H2 > 5.0 ? 'alarm' : 'active'}`} style={{left: '65%', top: '75%'}} onClick={() => setActivePanel('h2')}>
+        <div className={`equipment-node ${!state.pump_H2 || state.vib_H2 > 5.0 ? 'alarm' : 'active'}`} style={{left: '55%', top: '75%'}} onClick={() => setActivePanel('h2')}>
           <div className="eq-header">Печной Н-2</div>
           <div className="eq-body">
             <div className="tag-row"><span className="tag-name">Статус</span><span className={state.pump_H2 ? "tag-value ok" : "tag-value danger"}>{state.pump_H2 ? 'РАБОТА' : 'СТОП'}</span></div>
           </div>
         </div>
 
-        <div className="valve-wrapper" style={{left: '76.5%', top: '75%'}} onClick={() => setActivePanel('trc3')}>
+        <div className="valve-wrapper" style={{left: '71.5%', top: '75%'}} onClick={() => setActivePanel('trc3')}>
           <span className="valve-label">TRC-3 Газ</span>
           <svg className={`valve-bowtie ${state.gas_stuck ? 'alarm' : state.valve_gas > 0 ? 'active' : ''}`} width="36" height="24" viewBox="0 0 32 24">
             <polygon points="2,8 2,22 16,15" /><polygon points="30,8 30,22 16,15" /><rect x="12" y="2" width="8" height="6" fill="currentColor" stroke="currentColor" /><path d="M16 8 v7" stroke="currentColor" strokeWidth="2" />
           </svg>
         </div>
 
-        <div className={`equipment-node ${state.temp_P3 > 350 ? 'alarm' : 'active'}`} style={{left: '90%', top: '75%'}} onClick={() => setActivePanel('trc3')}>
+        <div className={`equipment-node ${state.temp_P3 > 350 ? 'alarm' : 'active'}`} style={{left: '88%', top: '75%'}} onClick={() => setActivePanel('trc3')}>
           <div className="eq-header">Печь П-3</div>
           <div className="eq-body">
             <div className="tag-row"><span className="tag-name">ТЕМП.</span><span className={getC(state.temp_P3, 340, 360)}>{state.temp_P3.toFixed(1)} °C</span></div>
@@ -182,67 +229,64 @@ function App() {
       </div>
 
       <div className="glass-panel props-area">
-        <div className="panel-title" style={{padding: '16px 16px 0'}}>ЛИЦЕВАЯ ПАНЕЛЬ</div>
+        <div className="panel-title">{getPanelTitle()}</div>
         <div className="prop-body">
           {!activePanel && <div className="empty-props">Выберите объект на схеме</div>}
 
           {activePanel === 'h1' && (<div>
-            <div className="prop-section-title">Сырьевой Насос Н-1</div>
             <div className="prop-row"><span>Состояние:</span><span className={state.pump_H1?"tag-value ok":"tag-value danger"}>{state.pump_H1?'ВКЛ':'ВЫКЛ'}</span></div>
-            <button className="btn btn-success" onClick={() => cmd('set_pump_h1', 1)}>ПУСК</button>
-            <button className="btn btn-danger" onClick={() => cmd('set_pump_h1', 0)}>СТОП</button>
+            <div className="prop-actions">
+              <button className="btn btn-success" onClick={() => cmd('set_pump_h1', 1)}>ПУСК</button>
+              <button className="btn btn-danger" onClick={() => cmd('set_pump_h1', 0)}>СТОП</button>
+            </div>
           </div>)}
 
           {activePanel === 'fcv' && (<div>
-            <div className="prop-section-title">Клапан сырья (FCV-1)</div>
             <div className="prop-row"><span>Позиция:</span><span>{state.valve_feed.toFixed(1)} %</span></div>
-            <input type="range" className="prop-slider" min="0" max="100" value={state.valve_feed} onChange={e => cmd('set_feed_valve', parseFloat(e.target.value))} />
+            <RangeSlider value={state.valve_feed} onChange={v => cmd('set_feed_valve', v)} disabled={false} />
           </div>)}
 
           {activePanel === 'k1' && (<div>
-            <div className="prop-section-title">Колонна К-1</div>
             <div className="prop-row"><span>УРОВЕНЬ:</span><span className={state.level_K1 >= 90 ? 'tag-value danger' : getC(state.level_K1, 20, 10, true)}>{state.level_K1.toFixed(1)} %</span></div>
             <div className="prop-row"><span>ДАВЛЕНИЕ:</span><span className={getC(state.pressure_K1, 4.0, 4.5)}>{state.pressure_K1.toFixed(2)} кгс</span></div>
             <div className="prop-row"><span>ТЕМП. ВЕРХ:</span><span className={getC(state.temp_top_K1, 145, 150)}>{state.temp_top_K1.toFixed(1)} °C</span></div>
           </div>)}
 
           {activePanel === 'pcv' && (<div>
-            <div className="prop-section-title">Сброс на Факел (PCV-221)</div>
-            {state.pcv_stuck && <div style={{background: '#ef4444', color: '#fff', padding: 8, borderRadius: 4, textAlign: 'center', marginBottom: 10, fontSize: 11}}>КЛАПАН ЗАКЛИНИЛ!</div>}
+            {state.pcv_stuck && <div className="alert-box">КЛАПАН ЗАКЛИНИЛ!</div>}
             <div className="prop-row"><span>Сброс газа:</span><span>{state.pcv_221.toFixed(1)} %</span></div>
-            <input type="range" className="prop-slider" min="0" max="100" value={state.pcv_221} onChange={e => cmd('set_pcv', parseFloat(e.target.value))} disabled={state.pcv_stuck} />
+            <RangeSlider value={state.pcv_221} onChange={v => cmd('set_pcv', v)} disabled={state.pcv_stuck} />
           </div>)}
 
           {activePanel === 'avz' && (<div>
-            <div className="prop-section-title">Аппарат Возд. Охлаждения АВЗ-1</div>
-            {state.avz_broken && <div style={{background: '#ef4444', color: '#fff', padding: 8, borderRadius: 4, textAlign: 'center', marginBottom: 10, fontSize: 11}}>ОТКАЗ ДВИГАТЕЛЯ!</div>}
+            {state.avz_broken && <div className="alert-box">ОТКАЗ ДВИГАТЕЛЯ!</div>}
             <div className="prop-row"><span>Обороты:</span><span>{state.avz_1.toFixed(0)} %</span></div>
-            <input type="range" className="prop-slider" min="0" max="100" value={state.avz_1} onChange={e => cmd('set_avz', parseFloat(e.target.value))} disabled={state.avz_broken} />
+            <RangeSlider value={state.avz_1} onChange={v => cmd('set_avz', v)} disabled={state.avz_broken} />
           </div>)}
 
           {activePanel === 'h2' && (<div>
-            <div className="prop-section-title">Печной Насос Н-2</div>
             <div className="prop-row"><span>Состояние:</span><span className={state.pump_H2?"tag-value ok":"tag-value danger"}>{state.pump_H2?'ВКЛ':'ВЫКЛ'}</span></div>
-            <button className="btn btn-success" onClick={() => cmd('set_pump_h2', 1)}>ПУСК</button>
-            <button className="btn btn-danger" onClick={() => cmd('set_pump_h2', 0)}>СТОП</button>
+            <div className="prop-actions">
+              <button className="btn btn-success" onClick={() => cmd('set_pump_h2', 1)}>ПУСК</button>
+              <button className="btn btn-danger" onClick={() => cmd('set_pump_h2', 0)}>СТОП</button>
+            </div>
           </div>)}
 
           {activePanel === 'trc3' && (<div>
-            <div className="prop-section-title">Регулятор Печи П-3 (TRC-3)</div>
-            {state.gas_stuck && <div style={{background: '#ef4444', color: '#fff', padding: 8, borderRadius: 4, textAlign: 'center', marginBottom: 10, fontSize: 11}}>КЛАПАН ЗАКЛИНИЛ НА 100%!</div>}
-            <div className="mode-toggle" style={{marginBottom: 15}}>
+            {state.gas_stuck && <div className="alert-box">КЛАПАН ЗАКЛИНИЛ НА 100%!</div>}
+            <div className="mode-toggle">
               <button className={`mode-btn auto ${state.TRC3_mode === 'AUTO' ? 'active' : ''}`} onClick={() => cmd('set_trc3_mode', 1)}>АВТО</button>
               <button className={`mode-btn manual ${state.TRC3_mode === 'MANUAL' ? 'active' : ''}`} onClick={() => cmd('set_trc3_mode', 0)}>РУЧНОЙ</button>
             </div>
             <div className="prop-row"><span>Температура:</span><span className={getC(state.temp_P3, 340, 360)}>{state.temp_P3.toFixed(1)} °C</span></div>
             <div className="prop-row"><span>Газ:</span><span>{state.valve_gas.toFixed(1)} %</span></div>
-            <input type="range" className="prop-slider" min="0" max="100" value={state.valve_gas} onChange={e => cmd('set_gas_valve', parseFloat(e.target.value))} disabled={state.TRC3_mode === 'AUTO' || state.gas_stuck} />
+            <RangeSlider value={state.valve_gas} onChange={v => cmd('set_gas_valve', v)} disabled={state.TRC3_mode === 'AUTO' || state.gas_stuck} />
           </div>)}
         </div>
       </div>
 
       <div className="glass-panel ai-area">
-        <div className="panel-title" style={{color: '#38bdf8'}}>ПОДСКАЗКИ ИИ</div>
+        <div className="panel-title">ПОДСКАЗКИ ИИ</div>
         <div className="ai-bubble">{aiMessage}</div>
       </div>
 
@@ -257,22 +301,11 @@ function App() {
       <div className="glass-panel instructor-area">
         <div className="panel-title">СЦЕНАРИИ (ИНСТРУКТОР)</div>
         <div className="inst-grid">
-          {/* Сценарий 1: Отказ сырьевого насоса */}
           <button className="btn btn-danger" onClick={() => {cmd('break_pump_h1'); setAiMessage("Отказ Н-1. Падает уровень К-1. У Н-2 началась кавитация (см. КОМПАКС). Срочно остановите Н-2!");}}>Отказ Н-1</button>
-          
-          {/* Сценарий 2: Заклинивание факельного клапана */}
           <button className="btn btn-danger" onClick={() => {cmd('jam_pcv'); setAiMessage("Клапан PCV-221 заклинил (сброса нет)! Давление растет. Экстренно гасите печь П-3 (TRC-3 в ручной и 0%), иначе ВЗРЫВ!");}}>Заклинить PCV</button>
-          
-          {/* Сценарий 3: Заклинивание газа на печь */}
           <button className="btn btn-warning" onClick={() => {cmd('jam_gas'); setAiMessage("Клапан газа печи заклинил на 100%. ПИД отключен. Срочно увеличьте подачу сырья (FCV-1) на 100% для съема тепла!");}}>Заклинить газ (100%)</button>
-          
-          {/* Сценарий 4: Потеря топливного газа */}
           <button className="btn btn-danger" onClick={() => {cmd('gas_loss'); setAiMessage("Обрыв топливного газа! Печь погасла. Переведите TRC-3 в ручной режим и перекройте клапан.");}}>Обрыв пламени</button>
-          
-          {/* Сценарий 5: Водяной снаряд (ЭЛОУ) */}
           <button className="btn btn-warning" onClick={() => {cmd('water_slug'); setAiMessage("В нефть попала вода с ЭЛОУ! Резкое вскипание в печи. Откройте сброс PCV-221 на факел!");}}>Вода с ЭЛОУ</button>
-          
-          {/* Сценарий 6: Отказ воздушного холодильника */}
           <button className="btn btn-warning" onClick={() => {cmd('break_avz'); setAiMessage("Отказ кулера АВЗ-1! Температура верха колонны К-1 критически растет. Снизьте нагрузку на печь.");}}>Отказ АВЗ-1</button>
         </div>
         <button className="btn btn-success" style={{marginTop: 'auto'}} onClick={resetSimulation}>СБРОСИТЬ УСТАНОВКУ</button>
