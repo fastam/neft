@@ -13,12 +13,13 @@ function App() {
     pump_H2: true, flow_out: 120.0,
     TRC3_mode: "AUTO", valve_gas: 83.5, temp_P3: 335.0,
     pcv_221: 40.0, avz_1: 80.0,
-    avz_broken: false, pcv_stuck: false, gas_stuck: false
+    avz_broken: false, pcv_stuck: false, gas_stuck: false,
+    vib_H1: 2.1, vib_H2: 1.8
   });
 
   const [alarmsList, setAlarmsList] = useState([]);
   const [activePanel, setActivePanel] = useState(null);
-  const [aiMessage, setAiMessage] = useState("ИИ-Помощник активен. Тренажер работает в штатном режиме. Кликните на любой аппарат, чтобы открыть панель свойств.");
+  const [aiMessage, setAiMessage] = useState("ИИ-Помощник активен. Тренажер работает в штатном режиме. Выберите сценарий или объект.");
 
   useEffect(() => {
     const timer = setInterval(async () => {
@@ -45,7 +46,6 @@ function App() {
     if (value !== null) {
       payload.value = value;
     }
-
     try {
       await fetch(`${API_URL}/command`, { 
         method: "POST", 
@@ -120,7 +120,7 @@ function App() {
           <div className="eq-header">Сырьевой Н-1</div>
           <div className="eq-body">
             <div className="tag-row"><span className="tag-name">Статус</span><span className={state.pump_H1 ? "tag-value ok" : "tag-value danger"}>{state.pump_H1 ? 'РАБОТА' : 'СТОП'}</span></div>
-            <div className="tag-row"><span className="tag-name">Расход (FRC 404)</span><span className="tag-value ok">{state.flow_in.toFixed(1)} т/ч</span></div>
+            <div className="tag-row"><span className="tag-name">Расход</span><span className="tag-value ok">{state.flow_in.toFixed(1)} т/ч</span></div>
           </div>
         </div>
 
@@ -131,13 +131,13 @@ function App() {
           </svg>
         </div>
 
-        <div className={`equipment-node ${state.pressure_K1 >= 4.5 ? 'alarm' : 'active'}`} style={{left: '40%', top: '60%', height: 180}} onClick={() => setActivePanel('k1')}>
+        <div className={`equipment-node ${state.pressure_K1 >= 4.5 || state.level_K1 >= 95 ? 'alarm' : 'active'}`} style={{left: '40%', top: '60%', height: 180}} onClick={() => setActivePanel('k1')}>
           <div className="eq-header">Колонна К-1</div>
           <div className="eq-body" style={{justifyContent: 'center'}}>
             <div className="tag-row"><span className="tag-name">Давление</span><span className={getC(state.pressure_K1, 4.0, 4.5)}>{state.pressure_K1.toFixed(2)} кгс</span></div>
             <div className="tag-row"><span className="tag-name">Темп. Верха</span><span className={getC(state.temp_top_K1, 145, 150)}>{state.temp_top_K1.toFixed(1)} °C</span></div>
             <div style={{height: 15}}></div>
-            <div className="tag-row"><span className="tag-name">УРОВЕНЬ</span><span className={getC(state.level_K1, 20, 10, true)}>{state.level_K1.toFixed(1)} %</span></div>
+            <div className="tag-row"><span className="tag-name">УРОВЕНЬ</span><span className={state.level_K1 >= 90 ? 'tag-value danger' : getC(state.level_K1, 20, 10, true)}>{state.level_K1.toFixed(1)} %</span></div>
             <div className="mini-bar"><div className="mini-bar-fill" style={{ width: `${state.level_K1}%`, background: state.level_K1>90||state.level_K1<10 ? '#ef4444':'#38bdf8' }}></div></div>
           </div>
         </div>
@@ -152,12 +152,12 @@ function App() {
         <div className={`equipment-node ${state.avz_broken ? 'alarm' : 'active'}`} style={{left: '70%', top: '22%'}} onClick={() => setActivePanel('avz')}>
           <div className="eq-header">АВЗ-1 (Охлаждение)</div>
           <div className="eq-body">
-            <div className="tag-row"><span className="tag-name">Обороты кулера</span><span className={state.avz_broken?"tag-value danger":"tag-value ok"}>{state.avz_1.toFixed(0)} %</span></div>
+            <div className="tag-row"><span className="tag-name">Обороты</span><span className={state.avz_broken?"tag-value danger":"tag-value ok"}>{state.avz_1.toFixed(0)} %</span></div>
             <div className="mini-bar"><div className="mini-bar-fill" style={{ width: `${state.avz_1}%`, background: '#38bdf8' }}></div></div>
           </div>
         </div>
 
-        <div className={`equipment-node ${!state.pump_H2 ? 'alarm' : 'active'}`} style={{left: '65%', top: '75%'}} onClick={() => setActivePanel('h2')}>
+        <div className={`equipment-node ${!state.pump_H2 || state.vib_H2 > 5.0 ? 'alarm' : 'active'}`} style={{left: '65%', top: '75%'}} onClick={() => setActivePanel('h2')}>
           <div className="eq-header">Печной Н-2</div>
           <div className="eq-body">
             <div className="tag-row"><span className="tag-name">Статус</span><span className={state.pump_H2 ? "tag-value ok" : "tag-value danger"}>{state.pump_H2 ? 'РАБОТА' : 'СТОП'}</span></div>
@@ -201,10 +201,9 @@ function App() {
 
           {activePanel === 'k1' && (<div>
             <div className="prop-section-title">Колонна К-1</div>
-            <div className="prop-row"><span>УРОВЕНЬ:</span><span className={getC(state.level_K1, 20, 10, true)}>{state.level_K1.toFixed(1)} %</span></div>
+            <div className="prop-row"><span>УРОВЕНЬ:</span><span className={state.level_K1 >= 90 ? 'tag-value danger' : getC(state.level_K1, 20, 10, true)}>{state.level_K1.toFixed(1)} %</span></div>
             <div className="prop-row"><span>ДАВЛЕНИЕ:</span><span className={getC(state.pressure_K1, 4.0, 4.5)}>{state.pressure_K1.toFixed(2)} кгс</span></div>
             <div className="prop-row"><span>ТЕМП. ВЕРХ:</span><span className={getC(state.temp_top_K1, 145, 150)}>{state.temp_top_K1.toFixed(1)} °C</span></div>
-            <p style={{fontSize: 11, color: '#94a3b8', marginTop: 20}}>Для снижения давления приоткройте клапан PCV-221. Для охлаждения верха увеличьте обороты АВЗ-1.</p>
           </div>)}
 
           {activePanel === 'pcv' && (<div>
@@ -248,20 +247,33 @@ function App() {
       </div>
 
       <div className="glass-panel diag-area">
-        <div className="panel-title">СИСТЕМА КОМПАКС</div>
+        <div className="panel-title">СИСТЕМА КОМПАКС (ВИБРАЦИЯ)</div>
         <div className="diag-list">
-          <div className="diag-item"><span><span className={`led ${state.pump_H1?'green':'red'}`}></span> Вибрация Н-1</span><span className="tag-value ok">2.1 мм/с</span></div>
-          <div className="diag-item"><span><span className={`led ${state.pump_H2?'green':'red'}`}></span> Вибрация Н-2</span><span className="tag-value ok">1.8 мм/с</span></div>
+          <div className="diag-item"><span><span className={`led ${state.vib_H1<4?'green':'red'}`}></span> Сырьевой Н-1</span><span className={getC(state.vib_H1, 4.0, 7.0)}>{state.vib_H1.toFixed(2)} мм/с</span></div>
+          <div className="diag-item"><span><span className={`led ${state.vib_H2<4?'green':'red'}`}></span> Печной Н-2</span><span className={getC(state.vib_H2, 4.0, 7.0)}>{state.vib_H2.toFixed(2)} мм/с</span></div>
         </div>
       </div>
 
       <div className="glass-panel instructor-area">
         <div className="panel-title">СЦЕНАРИИ (ИНСТРУКТОР)</div>
         <div className="inst-grid">
-          <button className="btn btn-danger" onClick={() => {cmd('break_pump_h1'); setAiMessage("Отказ насоса Н-1. Падает уровень К-1. Запустите резерв (кликните на Н-1) или остановите Н-2!");}}>Отказ Н-1</button>
-          <button className="btn btn-danger" onClick={() => {cmd('jam_pcv'); setAiMessage("Клапан PCV-221 заклинил! Давление растет. Экстренно гасите печь П-3 (TRC-3 в ручной режим и 0%), иначе ВЗРЫВ!");}}>Заклинить PCV (Взрыв)</button>
-          <button className="btn btn-warning" onClick={() => {cmd('jam_gas'); setAiMessage("Клапан газа печи заклинил на 100%. ПИД отключен. Срочно увеличьте подачу сырья (FCV-1) на 100% для съема тепла!");}}>Заклинить газ на П-3</button>
-          <button className="btn btn-warning" onClick={() => {cmd('break_avz'); setAiMessage("Отказ кулера АВЗ-1! Температура верха колонны К-1 критически растет.");}}>Отказ АВЗ-1</button>
+          {/* Сценарий 1: Отказ сырьевого насоса */}
+          <button className="btn btn-danger" onClick={() => {cmd('break_pump_h1'); setAiMessage("Отказ Н-1. Падает уровень К-1. У Н-2 началась кавитация (см. КОМПАКС). Срочно остановите Н-2!");}}>Отказ Н-1</button>
+          
+          {/* Сценарий 2: Заклинивание факельного клапана */}
+          <button className="btn btn-danger" onClick={() => {cmd('jam_pcv'); setAiMessage("Клапан PCV-221 заклинил (сброса нет)! Давление растет. Экстренно гасите печь П-3 (TRC-3 в ручной и 0%), иначе ВЗРЫВ!");}}>Заклинить PCV</button>
+          
+          {/* Сценарий 3: Заклинивание газа на печь */}
+          <button className="btn btn-warning" onClick={() => {cmd('jam_gas'); setAiMessage("Клапан газа печи заклинил на 100%. ПИД отключен. Срочно увеличьте подачу сырья (FCV-1) на 100% для съема тепла!");}}>Заклинить газ (100%)</button>
+          
+          {/* Сценарий 4: Потеря топливного газа */}
+          <button className="btn btn-danger" onClick={() => {cmd('gas_loss'); setAiMessage("Обрыв топливного газа! Печь погасла. Переведите TRC-3 в ручной режим и перекройте клапан.");}}>Обрыв пламени</button>
+          
+          {/* Сценарий 5: Водяной снаряд (ЭЛОУ) */}
+          <button className="btn btn-warning" onClick={() => {cmd('water_slug'); setAiMessage("В нефть попала вода с ЭЛОУ! Резкое вскипание в печи. Откройте сброс PCV-221 на факел!");}}>Вода с ЭЛОУ</button>
+          
+          {/* Сценарий 6: Отказ воздушного холодильника */}
+          <button className="btn btn-warning" onClick={() => {cmd('break_avz'); setAiMessage("Отказ кулера АВЗ-1! Температура верха колонны К-1 критически растет. Снизьте нагрузку на печь.");}}>Отказ АВЗ-1</button>
         </div>
         <button className="btn btn-success" style={{marginTop: 'auto'}} onClick={resetSimulation}>СБРОСИТЬ УСТАНОВКУ</button>
       </div>

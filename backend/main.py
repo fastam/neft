@@ -49,7 +49,9 @@ async def get_state():
         "avz_1": round(engine.avz_1, 1),
         "avz_broken": engine.avz_broken, 
         "pcv_stuck": engine.pcv_stuck, 
-        "gas_stuck": engine.gas_stuck
+        "gas_stuck": engine.gas_stuck,
+        "vib_H1": round(engine.vib_H1, 2),
+        "vib_H2": round(engine.vib_H2, 2)
     }
 
 @app.post("/api/command")
@@ -62,11 +64,14 @@ async def send_command(cmd: Command):
     elif cmd.action == "set_avz": engine.avz_1 = cmd.value
     elif cmd.action == "set_trc3_mode": engine.auto_mode = bool(cmd.value)
     elif cmd.action == "set_gas_valve":
-        if not engine.auto_mode and not engine.gas_stuck: engine.valve_gas = cmd.value
+        if not engine.auto_mode and not engine.gas_stuck and not engine.gas_loss: 
+            engine.valve_gas = cmd.value
     elif cmd.action == "break_pump_h1": engine.pump_H1_on = False
     elif cmd.action == "jam_pcv": engine.pcv_stuck = True; engine.pcv_221 = 0.0
     elif cmd.action == "jam_gas": engine.gas_stuck = True; engine.valve_gas = 100.0; engine.auto_mode = False
     elif cmd.action == "break_avz": engine.avz_broken = True; engine.avz_1 = 0.0
+    elif cmd.action == "water_slug": engine.trigger_water_slug()
+    elif cmd.action == "gas_loss": engine.gas_loss = True; engine.auto_mode = False
     return {"status": "success"}
 
 @app.post("/api/reset")
