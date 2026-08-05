@@ -237,8 +237,8 @@ function App() {
             {state.pump_H1 && state.valve_feed > 0 && <path d="M 650 700 L 860 700 Q 880 700 880 680 L 880 620 Q 880 600 900 600" className="svg-pipe-flow" />}
 
             {/* K-1 top to PCV / Flare */}
-            <path d="M 1000 510 L 1000 100" className="svg-pipe-bg" />
-            {state.pcv_221 > 0 && <path d="M 1000 510 L 1000 100" className="svg-pipe-flow flare" />}
+            <path d="M 1000 510 L 1000 120" className="svg-pipe-bg" />
+            {state.pcv_221 > 0 && <path d="M 1000 510 L 1000 120" className="svg-pipe-flow flare" />}
 
             {/* K-1 top to AVZ */}
             <path d="M 1000 420 Q 1000 400 1020 400 L 1200 400" className="svg-pipe-bg" />
@@ -249,28 +249,28 @@ function App() {
             {!state.avz_broken && <path d="M 1400 400 L 1550 400" className="svg-pipe-flow gas" />}
 
             {/* K-1 bottom to H-3 */}
-            <path d="M 1000 690 L 1000 900" className="svg-pipe-bg" />
-            {state.pump_H3 && <path d="M 1000 690 L 1000 900" className="svg-pipe-flow" />}
+            <path d="M 1000 690 L 1000 860" className="svg-pipe-bg" />
+            {state.pump_H3 && <path d="M 1000 690 L 1000 860" className="svg-pipe-flow" />}
 
             {/* H-3 to P-3 */}
             <path d="M 1100 900 L 1300 900" className="svg-pipe-bg" />
             {state.pump_H3 && <path d="M 1100 900 L 1300 900" className="svg-pipe-flow" />}
 
             {/* Gas Line to P-3 */}
-            <path d="M 1400 650 L 1400 900" className="svg-pipe-bg" />
-            {state.valve_gas > 0 && <path d="M 1400 650 L 1400 900" className="svg-pipe-flow gas" />}
+            <path d="M 1400 670 L 1400 840" className="svg-pipe-bg" />
+            {state.valve_gas > 0 && <path d="M 1400 670 L 1400 840" className="svg-pipe-flow gas" />}
 
             {/* P-3 to K-2 */}
             <path d="M 1500 900 L 1660 900 Q 1680 900 1680 880 L 1680 620 Q 1680 600 1700 600" className="svg-pipe-bg" />
             {state.pump_H3 && <path d="M 1500 900 L 1660 900 Q 1680 900 1680 880 L 1680 620 Q 1680 600 1700 600" className="svg-pipe-flow" />}
 
             {/* K-2 bottom to H-2 */}
-            <path d="M 1800 690 L 1800 900" className="svg-pipe-bg" />
-            {state.pump_H2 && <path d="M 1800 690 L 1800 900" className="svg-pipe-flow" />}
+            <path d="M 1800 690 L 1800 860" className="svg-pipe-bg" />
+            {state.pump_H2 && <path d="M 1800 690 L 1800 860" className="svg-pipe-flow" />}
 
             {/* H-2 to product storage */}
-            <path d="M 1900 900 L 2100 900" className="svg-pipe-bg" />
-            {state.pump_H2 && <path d="M 1900 900 L 2100 900" className="svg-pipe-flow" />}
+            <path d="M 1900 900 L 2050 900" className="svg-pipe-bg" />
+            {state.pump_H2 && <path d="M 1900 900 L 2050 900" className="svg-pipe-flow" />}
           </svg>
 
           <div className="terminal-node" style={{left: 1000, top: 100}}>ФАКЕЛЬНАЯ<br/>СЕТЬ</div>
@@ -378,54 +378,79 @@ function App() {
           {!activePanel && <div className="empty-props">Выберите объект на схеме</div>}
 
           {activePanel === 'h1' && (<div>
-            <div className="prop-item"><span>Состояние:</span><span className={state.pump_H1?"tag-value ok":"tag-value danger"}>{state.pump_H1?'ВКЛ':'ВЫКЛ'}</span></div>
-            <div className="prop-actions">
-              <button className="btn btn-success" onClick={() => cmd('set_pump_h1', 1)}>ПУСК</button>
-              <button className="btn btn-danger" onClick={() => cmd('set_pump_h1', 0)}>СТОП</button>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Состояние:</span>
+                <span className={state.pump_H1 ? "tag-value ok" : "tag-value danger"}>{state.pump_H1 ? 'РАБОТА' : 'СТОП'}</span>
+              </div>
+              <div className="mode-toggle">
+                <button className={`mode-btn auto ${state.pump_H1 ? 'active' : ''}`} onClick={() => cmd('set_pump_h1', 1)}>ПУСК</button>
+                <button className={`mode-btn off ${!state.pump_H1 ? 'active' : ''}`} onClick={() => cmd('set_pump_h1', 0)}>СТОП</button>
+              </div>
             </div>
           </div>)}
 
           {activePanel === 'e1' && (<div>
             {state.voltage_E1 === 0 && <div className="alert-box">НАПРЯЖЕНИЕ ОТКЛЮЧЕНО! Слейте воду.</div>}
             
-            <div className="prop-item"><span>Напряжение:</span><span className={state.voltage_E1 > 0 ? "tag-value ok" : "tag-value danger"}>{state.voltage_E1.toFixed(1)} кВ</span></div>
-            <button className="btn btn-primary" style={{marginBottom: 20}} onClick={() => cmd('restore_voltage')} disabled={state.water_level_E1 >= 80}>ВОССТАНОВИТЬ 4.8 кВ</button>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Напряжение:</span>
+                <span className={state.voltage_E1 > 0 ? "tag-value ok" : "tag-value danger"}>{state.voltage_E1.toFixed(1)} кВ</span>
+              </div>
+              <button className="btn btn-primary" style={{margin: 0}} onClick={() => cmd('restore_voltage')} disabled={state.water_level_E1 >= 80}>ВОССТАНОВИТЬ 4.8 кВ</button>
+            </div>
             
-            <div className="prop-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Дренаж воды:</span><span className="tag-value">{state.valve_drain_E1.toFixed(1)} %</span>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Дренаж воды:</span>
+                <span className="tag-value">{state.valve_drain_E1.toFixed(1)} %</span>
               </div>
               <RangeSlider value={state.valve_drain_E1} onChange={v => cmd('set_drain_e1', v)} disabled={false} />
             </div>
 
-            <div className="prop-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Деэмульгатор:</span><span className="tag-value">{state.demulsifier_feed.toFixed(1)} кг/ч</span>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Деэмульгатор:</span>
+                <span className="tag-value">{state.demulsifier_feed.toFixed(1)} кг/ч</span>
               </div>
               <RangeSlider value={state.demulsifier_feed} onChange={v => cmd('set_demulsifier', v)} disabled={false} />
             </div>
           </div>)}
 
           {activePanel === 'fcv' && (<div>
-            <div className="prop-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Открытие клапана:</span><span className="tag-value">{state.valve_feed.toFixed(1)} %</span>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Открытие клапана:</span>
+                <span className="tag-value">{state.valve_feed.toFixed(1)} %</span>
               </div>
               <RangeSlider value={state.valve_feed} onChange={v => cmd('set_feed_valve', v)} disabled={false} />
             </div>
           </div>)}
 
           {activePanel === 'k1' && (<div>
-            <div className="prop-item"><span>УРОВЕНЬ:</span><span className={state.level_K1 >= 90 ? 'tag-value danger' : getC(state.level_K1, 20, 10, true)}>{state.level_K1.toFixed(1)} %</span></div>
-            <div className="prop-item"><span>ДАВЛЕНИЕ:</span><span className={getC(state.pressure_K1, 4.0, 4.5)}>{state.pressure_K1.toFixed(2)} кгс</span></div>
-            <div className="prop-item"><span>ТЕМП. ВЕРХ:</span><span className={getC(state.temp_top_K1, 145, 150)}>{state.temp_top_K1.toFixed(1)} °C</span></div>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>УРОВЕНЬ:</span>
+                <span className={state.level_K1 >= 90 ? 'tag-value danger' : getC(state.level_K1, 20, 10, true)}>{state.level_K1.toFixed(1)} %</span>
+              </div>
+              <div className="prop-header">
+                <span>ДАВЛЕНИЕ:</span>
+                <span className={getC(state.pressure_K1, 4.0, 4.5)}>{state.pressure_K1.toFixed(2)} кгс</span>
+              </div>
+              <div className="prop-header">
+                <span>ТЕМП. ВЕРХ:</span>
+                <span className={getC(state.temp_top_K1, 145, 150)}>{state.temp_top_K1.toFixed(1)} °C</span>
+              </div>
+            </div>
           </div>)}
 
           {activePanel === 'pcv' && (<div>
             {state.pcv_stuck && <div className="alert-box">КЛАПАН ЗАКЛИНИЛ!</div>}
-            <div className="prop-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Сброс газа:</span><span className="tag-value">{state.pcv_221.toFixed(1)} %</span>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Сброс газа:</span>
+                <span className="tag-value">{state.pcv_221.toFixed(1)} %</span>
               </div>
               <RangeSlider value={state.pcv_221} onChange={v => cmd('set_pcv', v)} disabled={state.pcv_stuck} />
             </div>
@@ -433,19 +458,25 @@ function App() {
 
           {activePanel === 'avz' && (<div>
             {state.avz_broken && <div className="alert-box">ОТКАЗ ДВИГАТЕЛЯ!</div>}
-            <div className="prop-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Обороты вентилятора:</span><span className="tag-value">{state.avz_1.toFixed(0)} %</span>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Обороты вентилятора:</span>
+                <span className="tag-value">{state.avz_1.toFixed(0)} %</span>
               </div>
               <RangeSlider value={state.avz_1} onChange={v => cmd('set_avz', v)} disabled={state.avz_broken} />
             </div>
           </div>)}
 
           {activePanel === 'h3' && (<div>
-            <div className="prop-item"><span>Состояние:</span><span className={state.pump_H3?"tag-value ok":"tag-value danger"}>{state.pump_H3?'ВКЛ':'ВЫКЛ'}</span></div>
-            <div className="prop-actions">
-              <button className="btn btn-success" onClick={() => cmd('set_pump_h3', 1)}>ПУСК</button>
-              <button className="btn btn-danger" onClick={() => cmd('set_pump_h3', 0)}>СТОП</button>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Состояние:</span>
+                <span className={state.pump_H3 ? "tag-value ok" : "tag-value danger"}>{state.pump_H3 ? 'РАБОТА' : 'СТОП'}</span>
+              </div>
+              <div className="mode-toggle">
+                <button className={`mode-btn auto ${state.pump_H3 ? 'active' : ''}`} onClick={() => cmd('set_pump_h3', 1)}>ПУСК</button>
+                <button className={`mode-btn off ${!state.pump_H3 ? 'active' : ''}`} onClick={() => cmd('set_pump_h3', 0)}>СТОП</button>
+              </div>
             </div>
           </div>)}
 
@@ -453,36 +484,59 @@ function App() {
             {state.gas_stuck && <div className="alert-box">КЛАПАН ЗАКЛИНИЛ НА 100%!</div>}
             
             <div className="prop-item">
-              <span>Режим работы:</span>
-              <span className={state.TRC3_mode === 'AUTO' ? "tag-value ok" : "tag-value warn"}>{state.TRC3_mode === 'AUTO' ? 'АВТО' : 'РУЧНОЙ'}</span>
+              <div className="prop-header">
+                <span>Режим работы:</span>
+                <span className={state.TRC3_mode === 'AUTO' ? "tag-value ok" : "tag-value warn"}>{state.TRC3_mode === 'AUTO' ? 'АВТО' : 'РУЧНОЙ'}</span>
+              </div>
+              <div className="mode-toggle">
+                <button className={`mode-btn auto ${state.TRC3_mode === 'AUTO' ? 'active' : ''}`} onClick={() => cmd('set_trc3_mode', 1)}>АВТО</button>
+                <button className={`mode-btn manual ${state.TRC3_mode === 'MANUAL' ? 'active' : ''}`} onClick={() => cmd('set_trc3_mode', 0)}>РУЧНОЙ</button>
+              </div>
+            </div>
+            
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Температура:</span>
+                <span className={getC(state.temp_P3, 340, 360)}>{state.temp_P3.toFixed(1)} °C</span>
+              </div>
             </div>
 
-            <div className="mode-toggle">
-              <button className={`mode-btn auto ${state.TRC3_mode === 'AUTO' ? 'active' : ''}`} onClick={() => cmd('set_trc3_mode', 1)}>АВТО</button>
-              <button className={`mode-btn manual ${state.TRC3_mode === 'MANUAL' ? 'active' : ''}`} onClick={() => cmd('set_trc3_mode', 0)}>РУЧНОЙ</button>
-            </div>
-            
-            <div className="prop-item"><span>Температура:</span><span className={getC(state.temp_P3, 340, 360)}>{state.temp_P3.toFixed(1)} °C</span></div>
-            
-            <div className="prop-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Подача газа:</span><span className="tag-value">{state.valve_gas.toFixed(1)} %</span>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Подача газа:</span>
+                <span className="tag-value">{state.valve_gas.toFixed(1)} %</span>
               </div>
               <RangeSlider value={state.valve_gas} onChange={v => cmd('set_gas_valve', v)} disabled={state.TRC3_mode === 'AUTO' || state.gas_stuck} />
             </div>
           </div>)}
 
           {activePanel === 'k2' && (<div>
-            <div className="prop-item"><span>УРОВЕНЬ:</span><span className={state.level_K2 >= 90 ? 'tag-value danger' : getC(state.level_K2, 20, 10, true)}>{state.level_K2.toFixed(1)} %</span></div>
-            <div className="prop-item"><span>ДАВЛЕНИЕ:</span><span className={getC(state.pressure_K2, 1.8, 2.5)}>{state.pressure_K2.toFixed(2)} кгс</span></div>
-            <div className="prop-item"><span>ТЕМП. КУБ:</span><span className="tag-value ok">{state.temp_K2.toFixed(1)} °C</span></div>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>УРОВЕНЬ:</span>
+                <span className={state.level_K2 >= 90 ? 'tag-value danger' : getC(state.level_K2, 20, 10, true)}>{state.level_K2.toFixed(1)} %</span>
+              </div>
+              <div className="prop-header">
+                <span>ДАВЛЕНИЕ:</span>
+                <span className={getC(state.pressure_K2, 1.8, 2.5)}>{state.pressure_K2.toFixed(2)} кгс</span>
+              </div>
+              <div className="prop-header">
+                <span>ТЕМП. КУБ:</span>
+                <span className="tag-value ok">{state.temp_K2.toFixed(1)} °C</span>
+              </div>
+            </div>
           </div>)}
 
           {activePanel === 'h2' && (<div>
-            <div className="prop-item"><span>Состояние:</span><span className={state.pump_H2?"tag-value ok":"tag-value danger"}>{state.pump_H2?'ВКЛ':'ВЫКЛ'}</span></div>
-            <div className="prop-actions">
-              <button className="btn btn-success" onClick={() => cmd('set_pump_h2', 1)}>ПУСК</button>
-              <button className="btn btn-danger" onClick={() => cmd('set_pump_h2', 0)}>СТОП</button>
+            <div className="prop-item">
+              <div className="prop-header">
+                <span>Состояние:</span>
+                <span className={state.pump_H2 ? "tag-value ok" : "tag-value danger"}>{state.pump_H2 ? 'РАБОТА' : 'СТОП'}</span>
+              </div>
+              <div className="mode-toggle">
+                <button className={`mode-btn auto ${state.pump_H2 ? 'active' : ''}`} onClick={() => cmd('set_pump_h2', 1)}>ПУСК</button>
+                <button className={`mode-btn off ${!state.pump_H2 ? 'active' : ''}`} onClick={() => cmd('set_pump_h2', 0)}>СТОП</button>
+              </div>
             </div>
           </div>)}
         </div>
