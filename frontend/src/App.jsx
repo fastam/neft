@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
@@ -11,7 +10,7 @@ function App() {
     exploded: false, score: 100, alarms: [],
     pump_H1: true, valve_feed: 80.0, flow_in: 120.0,
     level_K1: 50.0, pressure_K1: 2.5, temp_top_K1: 140.0,
-    pump_H2: true, flow_out: 125.0,
+    pump_H2: true, flow_out: 120.0,
     TRC3_mode: "AUTO", valve_gas: 83.5, temp_P3: 335.0,
     pcv_221: 40.0, avz_1: 80.0,
     avz_broken: false, pcv_stuck: false, gas_stuck: false
@@ -28,29 +27,43 @@ function App() {
         const res = await fetch(`${API_URL}/state`);
         const data = await res.json();
         setState(data);
-        if (data.alarms.length > 0) {
+        if (data.alarms && data.alarms.length > 0) {
           data.alarms.forEach(al => {
             setAlarmsList(prev => !prev.find(a => a.text === al) 
               ? [{ id: Date.now()+Math.random(), time: new Date().toLocaleTimeString(), text: al, ack: false }, ...prev] 
               : prev);
           });
         }
-      } catch (e) {}
+      } catch (e) {
+      }
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
   const cmd = async (action, value = null) => {
+    const payload = { action };
+    if (value !== null) {
+      payload.value = value;
+    }
+
     try {
-      await fetch(`${API_URL}/command`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, value }) });
-    } catch (e) {}
+      await fetch(`${API_URL}/command`, { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify(payload) 
+      });
+    } catch (e) {
+    }
   };
   
   const resetSimulation = async () => { 
-    await fetch(`${API_URL}/reset`, { method: "POST" }); 
-    setAlarmsList([]); 
-    setActivePanel(null); 
-    setAiMessage("Симуляция сброшена. Установка возвращена к нормальным параметрам."); 
+    try {
+      await fetch(`${API_URL}/reset`, { method: "POST" }); 
+      setAlarmsList([]); 
+      setActivePanel(null); 
+      setAiMessage("Симуляция сброшена. Установка возвращена к нормальным параметрам."); 
+    } catch (e) {
+    }
   };
 
   const ackAlarm = (id) => setAlarmsList(alarmsList.map(a => a.id === id ? { ...a, ack: true } : a));
@@ -87,30 +100,22 @@ function App() {
         <div className="panel-title" style={{position:'absolute', top: 16, left: 16, zIndex: 10, background: '#0f172a', padding: '4px 8px', borderRadius: 4, border: '1px solid #334155'}}>МНЕМОСХЕМА АСУ ТП</div>
         
         <svg className="svg-layer" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-          
-          {/* H-1 -> K-1 (Жидкость) */}
           <path d="M 150 700 L 400 700" className="svg-pipe-bg" />
           {state.pump_H1 && <path d="M 150 700 L 400 700" className="svg-pipe-flow" />}
           
-          {/* K-1 -> PCV (Газ вверх на факел) */}
           <path d="M 400 550 L 400 150" className="svg-pipe-bg" />
           {state.pcv_221 > 0 && <path d="M 400 550 L 400 150" className="svg-pipe-flow flare" />}
           
-          {/* K-1 -> АВЗ-1 (Газ вправо и вверх с закруглением) */}
           <path d="M 400 550 L 400 250 Q 400 220 430 220 L 700 220" className="svg-pipe-bg" />
           {!state.avz_broken && <path d="M 400 550 L 400 250 Q 400 220 430 220 L 700 220" className="svg-pipe-flow gas" />}
 
-          {/* K-1 -> Н-2 (Жидкость вниз и вправо с двумя закруглениями) */}
           <path d="M 400 650 L 400 870 Q 400 900 430 900 L 620 900 Q 650 900 650 870 L 650 750" className="svg-pipe-bg" />
           {state.pump_H2 && <path d="M 400 650 L 400 870 Q 400 900 430 900 L 620 900 Q 650 900 650 870 L 650 750" className="svg-pipe-flow" />}
 
-          {/* Н-2 -> П-3 (Жидкость к печи) */}
           <path d="M 650 750 L 900 750" className="svg-pipe-bg" />
           {state.pump_H2 && <path d="M 650 750 L 900 750" className="svg-pipe-flow" />}
         </svg>
 
-        
-        {/* НАСОС Н-1 */}
         <div className={`equipment-node ${!state.pump_H1 ? 'alarm' : 'active'}`} style={{left: '15%', top: '70%'}} onClick={() => setActivePanel('h1')}>
           <div className="eq-header">Сырьевой Н-1</div>
           <div className="eq-body">
@@ -119,7 +124,6 @@ function App() {
           </div>
         </div>
 
-        {/* КЛАПАН FCV-1 */}
         <div className="valve-wrapper" style={{left: '27.5%', top: '70%'}} onClick={() => setActivePanel('fcv')}>
           <span className="valve-label">FCV-1</span>
           <svg className={`valve-bowtie ${state.valve_feed > 0 ? 'active' : ''}`} width="36" height="24" viewBox="0 0 32 24">
@@ -127,7 +131,6 @@ function App() {
           </svg>
         </div>
 
-        {/* КОЛОННА К-1 */}
         <div className={`equipment-node ${state.pressure_K1 >= 4.5 ? 'alarm' : 'active'}`} style={{left: '40%', top: '60%', height: 180}} onClick={() => setActivePanel('k1')}>
           <div className="eq-header">Колонна К-1</div>
           <div className="eq-body" style={{justifyContent: 'center'}}>
@@ -139,7 +142,6 @@ function App() {
           </div>
         </div>
 
-        {/* КЛАПАН PCV-221 (ФАКЕЛ) */}
         <div className="valve-wrapper" style={{left: '40%', top: '15%'}} onClick={() => setActivePanel('pcv')}>
           <span className="valve-label">PCV-221 (Факел)</span>
           <svg className={`valve-bowtie ${state.pcv_stuck ? 'alarm' : state.pcv_221 > 0 ? 'active' : ''}`} width="36" height="24" viewBox="0 0 32 24">
@@ -147,7 +149,6 @@ function App() {
           </svg>
         </div>
 
-        {/* АВЗ-1 (ОХЛАЖДЕНИЕ) */}
         <div className={`equipment-node ${state.avz_broken ? 'alarm' : 'active'}`} style={{left: '70%', top: '22%'}} onClick={() => setActivePanel('avz')}>
           <div className="eq-header">АВЗ-1 (Охлаждение)</div>
           <div className="eq-body">
@@ -156,7 +157,6 @@ function App() {
           </div>
         </div>
 
-        {/* НАСОС Н-2 */}
         <div className={`equipment-node ${!state.pump_H2 ? 'alarm' : 'active'}`} style={{left: '65%', top: '75%'}} onClick={() => setActivePanel('h2')}>
           <div className="eq-header">Печной Н-2</div>
           <div className="eq-body">
@@ -164,7 +164,6 @@ function App() {
           </div>
         </div>
 
-        {/* КЛАПАН ГАЗА TRC-3 */}
         <div className="valve-wrapper" style={{left: '76.5%', top: '75%'}} onClick={() => setActivePanel('trc3')}>
           <span className="valve-label">TRC-3 Газ</span>
           <svg className={`valve-bowtie ${state.gas_stuck ? 'alarm' : state.valve_gas > 0 ? 'active' : ''}`} width="36" height="24" viewBox="0 0 32 24">
@@ -172,7 +171,6 @@ function App() {
           </svg>
         </div>
 
-        {/* ПЕЧЬ П-3 */}
         <div className={`equipment-node ${state.temp_P3 > 350 ? 'alarm' : 'active'}`} style={{left: '90%', top: '75%'}} onClick={() => setActivePanel('trc3')}>
           <div className="eq-header">Печь П-3</div>
           <div className="eq-body">
