@@ -58,6 +58,45 @@ function App() {
     vib_H1: 2.1, vib_H2: 1.8, vib_H3: 1.9
   });
 
+  const [zoom, setZoom] = useState(1);
+
+  useEffect(() => {
+    const el = scadaRef.current;
+    if (!el) return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoom(prev => Math.min(Math.max(0.5, prev + delta), 2.5));
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  const getPumpClass = (isOn, vib) => {
+      if (!isOn || vib > 7.0) return "tag-value danger"; 
+      if (vib > 4.0) return "tag-value warn";        
+      return "tag-value ok";                          
+  };
+
+  const getPumpText = (isOn, vib) => {
+      if (vib > 7.0) return "КАВИТАЦИЯ";
+      return isOn ? "РАБОТА" : "СТОП";
+  };
+
+  const getVibStatus = (isOn, vib) => {
+    if (!isOn) return 'red';          
+    if (vib > 7.0) return 'red';
+    if (vib > 4.0) return 'yellow';
+    return 'green';
+  };
+  const getVibClass = (isOn, vib) => {
+    if (!isOn || vib > 7.0) return 'tag-value danger';
+    if (vib > 4.0) return 'tag-value warn';
+    return 'tag-value ok';
+  };
+
   const [alarmsList, setAlarmsList] = useState([]);
   const [activePanel, setActivePanel] = useState(null);
   const [aiMessage, setAiMessage] = useState("ИИ-Помощник активен. Вы можете перемещаться по схеме зажав левую кнопку мыши.");
@@ -226,7 +265,7 @@ function App() {
       >
         <div className="panel-title" style={{position:'absolute', top: 16, left: 16, zIndex: 10, background: '#0f172a', padding: '4px 8px', borderRadius: 4, border: '1px solid #334155', color: '#94a3b8', margin: 0}}>МНЕМОСХЕМА АСУ ТП</div>
         
-        <div className="scada-canvas" style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}>
+        <div className="scada-canvas" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0' }}>
           <svg className="svg-layer" viewBox="0 0 2200 1200" width="2200" height="1200">
             {/* Н-1 to Э-1 */}
             <path d="M 300 700 L 450 700" className="svg-pipe-bg" />
@@ -278,13 +317,20 @@ function App() {
           <div className="terminal-node" style={{left: 1400, top: 650}}>ТОПЛИВНАЯ<br/>СЕТЬ</div>
           <div className="terminal-node" style={{left: 2100, top: 900}}>ТОВАРНЫЙ<br/>ПАРК</div>
 
-          <div className={`equipment-node ${!state.pump_H1 ? 'alarm' : 'active'}`} style={{left: 200, top: 700}} onClick={() => setActivePanel('h1')}>
+          <div className={`equipment-node ${(!state.pump_H1 || state.vib_H1 > 5.0) ? 'alarm' : 'active'}`} 
+            style={{left: 200, top: 700}} onClick={() => setActivePanel('h1')}>
             <div className="eq-header">Сырьевой Н-1</div>
             <div className="eq-body">
-              <div className="tag-row"><span className="tag-name">Статус</span><span className={state.pump_H1 ? "tag-value ok" : "tag-value danger"}>{state.pump_H1 ? 'РАБОТА' : 'СТОП'}</span></div>
-              <div className="tag-row"><span className="tag-name">Расход</span><span className="tag-value ok">{state.flow_in.toFixed(1)} т/ч</span></div>
+                <div className="tag-row">
+                    <span className="tag-name">Статус</span>
+                    <span className={getPumpClass(state.pump_H1, state.vib_H1)}>{getPumpText(state.pump_H1, state.vib_H1)}</span>
+                </div>
+                <div className="tag-row">
+                    <span className="tag-name">Расход</span>
+                    <span className="tag-value ok">{state.flow_in?.toFixed(1)} т/ч</span>
+                </div>
             </div>
-          </div>
+        </div>
 
           <div className={`equipment-node ${state.voltage_E1 === 0 ? 'alarm' : 'active'}`} style={{left: 550, top: 700}} onClick={() => setActivePanel('e1')}>
             <div className="eq-header">Электродегидратор Э-1</div>
@@ -328,11 +374,15 @@ function App() {
             </div>
           </div>
 
-          <div className={`equipment-node ${!state.pump_H3 || state.vib_H3 > 5.0 ? 'alarm' : 'active'}`} style={{left: 1000, top: 900}} onClick={() => setActivePanel('h3')}>
-            <div className="eq-header">Насос Н-3 (Куб К-1)</div>
-            <div className="eq-body">
-              <div className="tag-row"><span className="tag-name">Статус</span><span className={state.pump_H3 ? "tag-value ok" : "tag-value danger"}>{state.pump_H3 ? 'РАБОТА' : 'СТОП'}</span></div>
-            </div>
+          <div className={`equipment-node ${(!state.pump_H3 || state.vib_H3 > 5.0) ? 'alarm' : 'active'}`} 
+              style={{left: 1000, top: 900}} onClick={() => setActivePanel('h3')}>
+              <div className="eq-header">Насос Н-3 (Куб К-1)</div>
+              <div className="eq-body">
+                  <div className="tag-row">
+                      <span className="tag-name">Статус</span>
+                      <span className={getPumpClass(state.pump_H3, state.vib_H3)}>{getPumpText(state.pump_H3, state.vib_H3)}</span>
+                  </div>
+              </div>
           </div>
 
           <div className={`equipment-node ${state.temp_P3 > 350 ? 'alarm' : 'active'}`} style={{left: 1400, top: 900}} onClick={() => setActivePanel('trc3')}>
@@ -362,13 +412,51 @@ function App() {
             </div>
           </div>
 
-          <div className={`equipment-node ${!state.pump_H2 || state.vib_H2 > 5.0 ? 'alarm' : 'active'}`} style={{left: 1800, top: 900}} onClick={() => setActivePanel('h2')}>
-            <div className="eq-header">Печной Н-2</div>
-            <div className="eq-body">
-              <div className="tag-row"><span className="tag-name">Статус</span><span className={state.pump_H2 ? "tag-value ok" : "tag-value danger"}>{state.pump_H2 ? 'РАБОТА' : 'СТОП'}</span></div>
-            </div>
+          <div className={`equipment-node ${(!state.pump_H2 || state.vib_H2 > 5.0) ? 'alarm' : 'active'}`} 
+              style={{left: 1800, top: 900}} onClick={() => setActivePanel('h2')}>
+              <div className="eq-header">Печной Н-2</div>
+              <div className="eq-body">
+                  <div className="tag-row">
+                      <span className="tag-name">Статус</span>
+                      <span className={getPumpClass(state.pump_H2, state.vib_H2)}>{getPumpText(state.pump_H2, state.vib_H2)}</span>
+                  </div>
+              </div>
           </div>
           
+        </div>
+      </div>
+      <div className="glass-panel diag-area">
+        <div className="panel-title">СИСТЕМА КОМПАКС (ВИБРАЦИЯ)</div>
+        <div className="diag-list" style={{ overflowY: 'auto', flexGrow: 1 }}>
+          <div className="diag-item">
+            <span>
+              <span className={`led ${getVibStatus(state.pump_H1, state.vib_H1)}`}></span>
+              Н-1 (Сырье)
+            </span>
+            <span className={getVibClass(state.pump_H1, state.vib_H1)}>
+              {state.vib_H1?.toFixed(2)} мм/с
+            </span>
+          </div>
+
+          <div className="diag-item">
+            <span>
+              <span className={`led ${getVibStatus(state.pump_H3, state.vib_H3)}`}></span>
+              Н-3 (Куб К-1)
+            </span>
+            <span className={getVibClass(state.pump_H3, state.vib_H3)}>
+              {state.vib_H3?.toFixed(2)} мм/с
+            </span>
+          </div>
+
+          <div className="diag-item">
+            <span>
+              <span className={`led ${getVibStatus(state.pump_H2, state.vib_H2)}`}></span>
+              Н-2 (Куб К-2)
+            </span>
+            <span className={getVibClass(state.pump_H2, state.vib_H2)}>
+              {state.vib_H2?.toFixed(2)} мм/с
+            </span>
+          </div>
         </div>
       </div>
 
@@ -545,15 +633,6 @@ function App() {
       <div className="glass-panel ai-area">
         <div className="panel-title">ПОДСКАЗКИ ИИ</div>
         <div className="ai-bubble">{aiMessage}</div>
-      </div>
-
-      <div className="glass-panel diag-area">
-        <div className="panel-title">СИСТЕМА КОМПАКС (ВИБРАЦИЯ)</div>
-        <div className="diag-list" style={{overflowY: 'auto', flexGrow: 1}}>
-          <div className="diag-item"><span><span className={`led ${state.vib_H1<4?'green':'red'}`}></span> Н-1 (Сырье)</span><span className={getC(state.vib_H1, 4.0, 7.0)}>{state.vib_H1.toFixed(2)} мм/с</span></div>
-          <div className="diag-item"><span><span className={`led ${state.vib_H3<4?'green':'red'}`}></span> Н-3 (Куб К-1)</span><span className={getC(state.vib_H3, 4.0, 7.0)}>{state.vib_H3.toFixed(2)} мм/с</span></div>
-          <div className="diag-item"><span><span className={`led ${state.vib_H2<4?'green':'red'}`}></span> Н-2 (Куб К-2)</span><span className={getC(state.vib_H2, 4.0, 7.0)}>{state.vib_H2.toFixed(2)} мм/с</span></div>
-        </div>
       </div>
 
       <div className="glass-panel instructor-area">
