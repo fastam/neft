@@ -74,7 +74,7 @@ body {
   width: 2200px;
   height: 1200px;
   transform-origin: top left;
-  transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: none;
   background-image: 
     linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
