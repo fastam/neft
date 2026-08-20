@@ -74,7 +74,7 @@ body {
   width: 2200px;
   height: 1200px;
   transform-origin: top left;
-  transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: none;
   background-image: 
     linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
@@ -268,6 +268,28 @@ body {
 .mode-btn.active.manual { background: #d97706; color: #fff; }
 .mode-btn.active.off { background: #dc2626; color: #fff; }
 .mode-btn:not(.active):hover { background: #1e293b; color: #94a3b8; }
+
+
+.led.yellow {
+  background: #fbbf24;
+  box-shadow: 0 0 10px #fbbf24;
+}
+
+.led.red {
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+}
+
+.led.green {
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+
+@keyframes alarm-pulse {
+  0% { border-color: #ef4444; }
+  50% { border-color: #7f1d1d; }
+  100% { border-color: #ef4444; }
+}
 
 .empty-props { display: flex; align-items: center; justify-content: center; height: 100%; text-align: center; color: #64748b; font-size: 13px; padding: 20px; border: 2px dashed #1e293b; border-radius: 8px; margin: 16px 0; }
 
